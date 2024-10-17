@@ -5,6 +5,9 @@ and do sparse reconstruction.
 Requires hloc module from : https://github.com/cvg/Hierarchical-Localization
 """
 
+# Notes (Lasse):
+# Added mask path to forward to hloc.
+
 # Copyright 2022 the Regents of the University of California, Nerfstudio Team and contributors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +24,7 @@ Requires hloc module from : https://github.com/cvg/Hierarchical-Localization
 
 import sys
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 from nerfstudio.process_data.process_data_utils import CameraModel
 from nerfstudio.utils.rich_utils import CONSOLE
@@ -49,6 +52,7 @@ def run_hloc(
     num_matched: int = 50,
     refine_pixsfm: bool = False,
     use_single_camera_mode: bool = True,
+    mask_dir: Optional[Path] = None
 ) -> None:
     """Runs hloc on the images.
 
@@ -64,6 +68,7 @@ def run_hloc(
         num_matched: Number of image pairs for loc.
         refine_pixsfm: If True, refine the reconstruction using pixel-perfect-sfm.
         use_single_camera_mode: If True, uses one camera for all frames. Otherwise uses one camera per frame.
+        mask_dir: Path to the directory containing the masks.
     """
 
     try:
@@ -109,8 +114,10 @@ def run_hloc(
     feature_conf = extract_features.confs[feature_type]  # type: ignore
     matcher_conf = match_features.confs[matcher_type]  # type: ignore
 
+    CONSOLE.print("[bold purple]Mask dir:", mask_dir) # TODO: Remove
+
     references = [p.relative_to(image_dir).as_posix() for p in image_dir.iterdir()]
-    extract_features.main(feature_conf, image_dir, image_list=references, feature_path=features)  # type: ignore
+    extract_features.main(feature_conf, image_dir, image_list=references, feature_path=features, mask_dir=mask_dir)  # type: ignore
     if matching_method == "exhaustive":
         pairs_from_exhaustive.main(sfm_pairs, image_list=references)  # type: ignore
     else:

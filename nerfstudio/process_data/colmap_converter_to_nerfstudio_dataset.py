@@ -14,6 +14,9 @@
 
 """Base class to processes a video or image sequence to a nerfstudio compatible dataset."""
 
+# Notes (Lasse):
+# Added mask path to forward to hloc.
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple
@@ -104,6 +107,9 @@ class ColmapConverterToNerfstudioDataset(BaseConverterToNerfstudioDataset):
     use_single_camera_mode: bool = True
     """Whether to assume all images taken with the same camera characteristics, set to False for multiple cameras in colmap (only works with hloc sfm_tool).
     """
+
+    masks: Optional[Path] = None
+    """Directory containing a matching mask for each frame."""
 
     @staticmethod
     def default_colmap_path() -> Path:
@@ -239,6 +245,7 @@ class ColmapConverterToNerfstudioDataset(BaseConverterToNerfstudioDataset):
                 matcher_type=matcher_type,
                 refine_pixsfm=self.refine_pixsfm,
                 use_single_camera_mode=self.use_single_camera_mode,
+                mask_dir=Path(image_dir).parent / "masks"
             )
         else:
             raise RuntimeError("Invalid combination of sfm_tool, feature_type, and matcher_type, " "exiting")

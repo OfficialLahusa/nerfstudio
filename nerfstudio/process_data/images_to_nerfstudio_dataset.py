@@ -14,8 +14,12 @@
 
 """Processes an image sequence to a nerfstudio compatible dataset."""
 
+# Notes (Lasse):
+# Added mask path to forward to hloc.
+
 from dataclasses import dataclass
 from typing import Optional
+from pathlib import Path
 
 from nerfstudio.process_data import equirect_utils, process_data_utils
 from nerfstudio.process_data.colmap_converter_to_nerfstudio_dataset import ColmapConverterToNerfstudioDataset
@@ -92,11 +96,31 @@ class ImagesToNerfstudioDataset(ColmapConverterToNerfstudioDataset):
                     (a.relative_to(self.eval_data).as_posix(), b.name) for a, b in eval_image_rename_map_paths.items()
                 )
                 image_rename_map.update(eval_image_rename_map)
+            
+            CONSOLE.log("[bold purple]Mask dir:", self.masks)
+
+            # Copy frame masks.
+            if self.masks is not None:
+                CONSOLE.log("[bold purple]Copying masks")
+                mask_image_rename_map_paths = process_data_utils.copy_images(
+                    self.masks,
+                    image_dir=Path(self.image_dir).parent / "masks",
+                    crop_factor=self.crop_factor,
+                    image_prefix="frame_train_" if self.eval_data is not None else "frame_",
+                    verbose=self.verbose,
+                    num_downscales=0,
+                    same_dimensions=self.same_dimensions,
+                    keep_image_dir=False,
+                )
+                #mask_image_rename_map = dict(
+                #    (a.relative_to(self.masks).as_posix(), b.name) for a, b in mask_image_rename_map_paths.items()
+                #)
+                #image_rename_map.update(mask_image_rename_map)
 
             num_frames = len(image_rename_map)
             summary_log.append(f"Starting with {num_frames} images")
 
-            # # Create mask
+            # # Create mask (Lasse: Unrelated to added frame mask option, this is a camera mask)
             mask_path = process_data_utils.save_mask(
                 image_dir=self.image_dir,
                 num_downscales=self.num_downscales,
