@@ -81,6 +81,7 @@ def run_hloc(
             match_features,
             pairs_from_exhaustive,
             pairs_from_retrieval,
+            pairs_from_sequence,
             reconstruction,
         )
     except ImportError:
@@ -119,13 +120,21 @@ def run_hloc(
     CONSOLE.print("[bold purple]Mask dir:", mask_dir) # TODO: Remove
 
     references = [p.relative_to(image_dir).as_posix() for p in image_dir.iterdir()]
-    extract_features.main(feature_conf, image_dir, image_list=references, feature_path=features, mask_dir=mask_dir)  # type: ignore
+
+    extract_features.main(feature_conf, image_dir, image_list=references,
+                          feature_path=features, mask_dir=mask_dir)  # type: ignore
+
+    # Gather image pairs.
+    CONSOLE.print("[bold purple]Matching method:", matching_method)
     if matching_method == "exhaustive":
         pairs_from_exhaustive.main(sfm_pairs, image_list=references)  # type: ignore
-    else:
+    elif matching_method == "sequential":
+        pairs_from_sequence.main(sfm_pairs, image_list=references)
+    else: # => vocab tree / retrieval
         retrieval_path = extract_features.main(retrieval_conf, image_dir, outputs)  # type: ignore
         num_matched = min(len(references), num_matched)
         pairs_from_retrieval.main(retrieval_path, sfm_pairs, num_matched=num_matched)  # type: ignore
+
     match_features.main(matcher_conf, sfm_pairs, features=features, matches=matches)  # type: ignore
 
     image_options = pycolmap.ImageReaderOptions(camera_model=camera_model.value)  # type: ignore
