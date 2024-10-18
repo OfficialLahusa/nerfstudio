@@ -112,10 +112,6 @@ class ImagesToNerfstudioDataset(ColmapConverterToNerfstudioDataset):
                     same_dimensions=self.same_dimensions,
                     keep_image_dir=False,
                 )
-                #mask_image_rename_map = dict(
-                #    (a.relative_to(self.masks).as_posix(), b.name) for a, b in mask_image_rename_map_paths.items()
-                #)
-                #image_rename_map.update(mask_image_rename_map)
 
             num_frames = len(image_rename_map)
             summary_log.append(f"Starting with {num_frames} images")
@@ -146,8 +142,13 @@ class ImagesToNerfstudioDataset(ColmapConverterToNerfstudioDataset):
         image_id_to_depth_path, log_tmp = self._export_depth()
         summary_log += log_tmp
 
-        if require_cameras_exist and not (self.absolute_colmap_model_path / "cameras.bin").exists():
-            raise RuntimeError(f"Could not find existing COLMAP results ({self.colmap_model_path / 'cameras.bin'}).")
+        if self.use_glomap:
+            model_path = self.output_dir / "glomap" / "0"
+        else:
+            model_path = self.absolute_colmap_model_path
+
+        if require_cameras_exist and not (model_path / "cameras.bin").exists():
+            raise RuntimeError(f"Could not find existing COLMAP results ({model_path / 'cameras.bin'}).")
 
         summary_log += self._save_transforms(
             num_frames,

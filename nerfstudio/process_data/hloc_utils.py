@@ -52,7 +52,8 @@ def run_hloc(
     num_matched: int = 50,
     refine_pixsfm: bool = False,
     use_single_camera_mode: bool = True,
-    mask_dir: Optional[Path] = None
+    mask_dir: Optional[Path] = None,
+    use_glomap: bool = False
 ) -> None:
     """Runs hloc on the images.
 
@@ -69,6 +70,7 @@ def run_hloc(
         refine_pixsfm: If True, refine the reconstruction using pixel-perfect-sfm.
         use_single_camera_mode: If True, uses one camera for all frames. Otherwise uses one camera per frame.
         mask_dir: Path to the directory containing the masks.
+        use_glomap: Use GLOMAP instead of COLMAP for sparse reconstruction.
     """
 
     try:
@@ -164,4 +166,5 @@ def run_hloc(
             camera_mode=camera_mode,  # type: ignore
             image_options=image_options,
             verbose=verbose,
+            use_glomap=use_glomap
         )

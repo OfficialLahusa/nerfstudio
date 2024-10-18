@@ -110,6 +110,8 @@ class ColmapConverterToNerfstudioDataset(BaseConverterToNerfstudioDataset):
 
     masks: Optional[Path] = None
     """Directory containing a matching mask for each frame."""
+    use_glomap: bool = False
+    """Use GLOMAP instead of COLMAP for sparse reconstruction."""
 
     @staticmethod
     def default_colmap_path() -> Path:
@@ -137,10 +139,16 @@ class ColmapConverterToNerfstudioDataset(BaseConverterToNerfstudioDataset):
             image_rename_map: Use these image names instead of the names embedded in the COLMAP db
         """
         summary_log = []
-        if (self.absolute_colmap_model_path / "cameras.bin").exists():
+
+        if self.use_glomap:
+            model_path = self.output_dir / "glomap" / "0"
+        else:
+            model_path = self.absolute_colmap_model_path
+
+        if (model_path / "cameras.bin").exists():
             with CONSOLE.status("[bold yellow]Saving results to transforms.json", spinner="balloon"):
                 num_matched_frames = colmap_utils.colmap_to_json(
-                    recon_dir=self.absolute_colmap_model_path,
+                    recon_dir=model_path,
                     output_dir=self.output_dir,
                     image_id_to_depth_path=image_id_to_depth_path,
                     camera_mask_path=camera_mask_path,
@@ -217,6 +225,8 @@ class ColmapConverterToNerfstudioDataset(BaseConverterToNerfstudioDataset):
             image_dir = self.image_dir
 
         if sfm_tool == "colmap":
+            assert not self.use_glomap, "GLOMAP reconstruction only works with sfm_tool hloc"
+
             colmap_utils.run_colmap(
                 image_dir=image_dir,
                 colmap_dir=self.absolute_colmap_path,
@@ -245,7 +255,8 @@ class ColmapConverterToNerfstudioDataset(BaseConverterToNerfstudioDataset):
                 matcher_type=matcher_type,
                 refine_pixsfm=self.refine_pixsfm,
                 use_single_camera_mode=self.use_single_camera_mode,
-                mask_dir=Path(image_dir).parent / "masks"
+                mask_dir=Path(image_dir).parent / "masks",
+                use_glomap=self.use_glomap
             )
         else:
             raise RuntimeError("Invalid combination of sfm_tool, feature_type, and matcher_type, " "exiting")
